@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Calendário de Rotas Confirmadas</title>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f6f9;
+    transition: 0.3s;
+}
+
+.dark-mode {
+    background: #1e1e1e;
+    color: #f5f5f5;
+}
+
+.dark-mode #calendar,
+.dark-mode .side-list {
+    background: #2a2a2a;
+}
+
+h1 {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+#calendar {
+    flex: 3;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: opacity 0.3s ease;
+}
+
+.side-list {
+    flex: 1;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.side-list h3 {
+    margin-top: 0;
+}
+
+.fc-day-mon {
+    background-color: #fdf6e3 !important;
+}
+
+.filters {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.filters button {
+    margin: 4px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    transition: transform 0.2s ease;
+}
+
+.filters button:hover {
+    transform: scale(1.05);
+}
+
+.rota1-btn { background: #1abc9c; }
+.rota2-btn { background: #3498db; }
+.rota3-btn { background: #9b59b6; }
+.rota4-btn { background: #f39c12; }
+.eventos-btn { background: #2c3e50; }
+.limpar-btn { background: #7f8c8d; }
+
+.highlight-event {
+    animation: pulseHighlight 1s ease-in-out 3;
+    box-shadow: 0 0 15px 4px rgba(255, 0, 0, 0.6) !important;
+    border-radius: 6px !important;
+}
+
+@keyframes pulseHighlight {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+.tooltip-box {
+    position: absolute;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-size: 14px;
+    z-index: 9999;
+}
+
+.dark-mode .tooltip-box {
+    background: #333;
+    color: white;
+}
+
+.event-legend {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.dark-mode .event-legend {
+    color: #bbb;
+}
+
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🚛 Calendário de Rotas Confirmadas</h1>
+
+<div class="filters">
+    <button class="rota1-btn" onclick="filtrarRota(1)">Rota 1</button>
+    <button class="rota2-btn" onclick="filtrarRota(2)">Rota 2</button>
+    <button class="rota3-btn" onclick="filtrarRota(3)">Rota 3</button>
+    <button class="rota4-btn" onclick="filtrarRota(4)">Rota 4</button>
+    <button class="eventos-btn" onclick="verEventos()">Apenas Eventos</button>
+    <button class="limpar-btn" onclick="limparFiltros()">Limpar</button>
+</div>
+
+<div class="container">
+    <div id="calendar"></div>
+
+    <div class="side-list">
+        <h3>Municípios do mês</h3>
+        <ul id="listaMunicipios"></ul>
+
+        <div class="event-legend">
+            * Eventos
+        </div>
+    </div>
+</div>
+
+<script>
+
+const DATA = {"calendario":[{"cidade":"Marechal Cândido Rondon - Porto Mendes","dataInicio":"2026-02-06","dataFim":"2026-02-08","caminhao":4,"tipo":"Evento"},{"cidade":"Mandaguari","dataInicio":"2026-02-24","dataFim":"2026-02-26","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Imbaú","dataInicio":"2026-03-03","dataFim":"2026-03-06","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Foz do Iguaçu - Dia da Água","dataInicio":"2026-03-16","dataFim":"2026-03-20","caminhao":1,"tipo":"Evento"},{"cidade":"Telêmaco Borba*","dataInicio":"2026-03-24","dataFim":"2026-03-27","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Castro*","dataInicio":"2026-03-31","dataFim":"2026-04-02","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Carambeí","dataInicio":"2026-04-07","dataFim":"2026-04-08","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Irati*","dataInicio":"2026-04-08","dataFim":"2026-04-10","caminhao":1,"tipo":"Evento"},{"cidade":"Ponta Grossa***","dataInicio":"2026-04-14","dataFim":"2026-04-17","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Bocaiúva do Sul","dataInicio":"2026-04-28","dataFim":"2026-04-30","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Guaratuba","dataInicio":"2026-05-05","dataFim":"2026-05-08","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Jataizinho","dataInicio":"2026-05-19","dataFim":"2026-05-20","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Curiúva","dataInicio":"2026-05-26","dataFim":"2026-05-27","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Piraquara*","dataInicio":"2026-06-09","dataFim":"2026-06-12","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Piraí do Sul","dataInicio":"2026-06-23","dataFim":"2026-06-24","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Almirante Tamandaré**","dataInicio":"2026-06-30","dataFim":"2026-07-02","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Colombo","dataInicio":"2026-07-07","dataFim":"2026-07-08","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Tunas do Paraná","dataInicio":"2026-07-09","dataFim":"2026-07-10","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Cerro Azul","dataInicio":"2026-07-30","dataFim":"2026-07-31","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Doutor Ulysses","dataInicio":"2026-08-04","dataFim":"2026-08-05","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Sengés","dataInicio":"2026-08-11","dataFim":"2026-08-12","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Salto Itararé","dataInicio":"2026-08-13","dataFim":"2026-08-14","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Teste","dataInicio":"2026-02-12","dataFim":"2026-02-13","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"Jaguariaíva","dataInicio":"2026-09-10","dataFim":"2026-09-11","caminhao":1,"tipo":"Atendimento Pedagógico"},{"cidade":"General Carneiro","dataInicio":"2026-02-04","dataFim":"2026-02-06","caminhao":2,"tipo":"Evento"},{"cidade":"Araucária","dataInicio":"2026-02-10","dataFim":"2026-02-12","caminhao":2,"tipo":"Evento"},{"cidade":"Coronel Domingos Soares","dataInicio":"2026-02-26","dataFim":"2026-02-27","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Planalto","dataInicio":"2026-03-03","dataFim":"2026-03-04","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Manfrinópolis","dataInicio":"2026-03-05","dataFim":"2026-03-06","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Espigão Alto do Iguaçu","dataInicio":"2026-03-10","dataFim":"2026-03-11","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Rio Bonito do Iguaçu","dataInicio":"2026-03-12","dataFim":"2026-03-13","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Porto Barreiro","dataInicio":"2026-03-17","dataFim":"2026-03-18","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Laranjeiras do Sul","dataInicio":"2026-03-19","dataFim":"2026-03-20","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Inácio Martins","dataInicio":"2026-03-24","dataFim":"2026-03-26","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Laranjal","dataInicio":"2026-03-31","dataFim":"2026-04-01","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Palmital","dataInicio":"2026-04-07","dataFim":"2026-04-08","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Mato Rico","dataInicio":"2026-04-09","dataFim":"2026-04-10","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Santa Maria do Oeste","dataInicio":"2026-04-14","dataFim":"2026-04-15","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Pitanga","dataInicio":"2026-04-16","dataFim":"2026-04-17","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Boa Ventura de São Roque","dataInicio":"2026-04-21","dataFim":"2026-04-22","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Turvo","dataInicio":"2026-04-23","dataFim":"2026-04-24","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Campina do Simão","dataInicio":"2026-04-28","dataFim":"2026-04-30","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Goioxim","dataInicio":"2026-05-05","dataFim":"2026-05-06","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Virmond","dataInicio":"2026-05-07","dataFim":"2026-05-08","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Candói","dataInicio":"2026-05-12","dataFim":"2026-05-13","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Foz do Jordão","dataInicio":"2026-05-14","dataFim":"2026-05-15","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Mangueirinha","dataInicio":"2026-05-19","dataFim":"2026-05-20","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Reserva do Iguaçu","dataInicio":"2026-05-21","dataFim":"2026-05-22","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Pinhão","dataInicio":"2026-05-26","dataFim":"2026-05-27","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Ivaí","dataInicio":"2026-05-28","dataFim":"2026-05-29","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"São José dos Pinhais**","dataInicio":"2026-06-01","dataFim":"2026-06-05","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Rio Azul","dataInicio":"2026-06-09","dataFim":"2026-06-10","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Imbituva","dataInicio":"2026-06-11","dataFim":"2026-06-12","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Irati*","dataInicio":"2026-06-16","dataFim":"2026-06-19","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Teixeira Soares","dataInicio":"2026-06-23","dataFim":"2026-06-24","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"São João do Triunfo","dataInicio":"2026-06-30","dataFim":"2026-07-01","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Rebouças","dataInicio":"2026-07-02","dataFim":"2026-07-03","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Paulo Frontin","dataInicio":"2026-07-28","dataFim":"2026-07-29","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Paula Freitas","dataInicio":"2026-07-30","dataFim":"2026-07-31","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Clevelândia","dataInicio":"2026-08-04","dataFim":"2026-08-05","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Mariópolis","dataInicio":"2026-08-20","dataFim":"2026-08-21","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Bom Sucesso do Sul","dataInicio":"2026-08-25","dataFim":"2026-08-26","caminhao":2,"tipo":"Atendimento Pedagógico"},{"cidade":"Apucarana","dataInicio":"2026-01-27","dataFim":"2026-01-31","caminhao":4,"tipo":"Evento"},{"cidade":"Douradina","dataInicio":"2026-02-05","dataFim":"2026-02-08","caminhao":3,"tipo":"Evento"},{"cidade":"São Jorge do Patrocínio","dataInicio":"2026-03-03","dataFim":"2026-03-06","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Esperança Nova","dataInicio":"2026-03-10","dataFim":"2026-03-11","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Antonio João - MS","dataInicio":"2026-03-16","dataFim":"2026-03-19","caminhao":3,"tipo":"Evento"},{"cidade":"Cafezal do Sul","dataInicio":"2026-03-24","dataFim":"2026-03-25","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Perobal","dataInicio":"2026-03-26","dataFim":"2026-03-27","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Mariluz","dataInicio":"2026-03-31","dataFim":"2026-04-02","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Tapejara","dataInicio":"2026-04-16","dataFim":"2026-04-17","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Santa Cruz de Monte Castelo","dataInicio":"2026-05-05","dataFim":"2026-05-06","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Santa Izabel do Ivaí","dataInicio":"2026-05-07","dataFim":"2026-05-08","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Santa Mônica","dataInicio":"2026-05-14","dataFim":"2026-05-15","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"São Pedro do Paraná","dataInicio":"2026-05-21","dataFim":"2026-05-22","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Marilena","dataInicio":"2026-05-28","dataFim":"2026-05-29","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Nova Londrina","dataInicio":"2026-06-02","dataFim":"2026-06-03","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Itaúna do Sul","dataInicio":"2026-06-09","dataFim":"2026-06-10","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Terra Rica","dataInicio":"2026-06-16","dataFim":"2026-06-17","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Guaraci","dataInicio":"2026-06-23","dataFim":"2026-06-24","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Planaltina do Paraná","dataInicio":"2026-06-25","dataFim":"2026-06-26","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Guaporema","dataInicio":"2026-07-07","dataFim":"2026-07-08","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Rondon","dataInicio":"2026-07-09","dataFim":"2026-07-10","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Indianópolis","dataInicio":"2026-07-21","dataFim":"2026-07-22","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Japurá","dataInicio":"2026-07-28","dataFim":"2026-07-29","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"São Tomé","dataInicio":"2026-07-30","dataFim":"2026-07-31","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Jussara","dataInicio":"2026-08-04","dataFim":"2026-08-05","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Terra Boa","dataInicio":"2026-08-06","dataFim":"2026-08-07","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Iretama","dataInicio":"2026-08-11","dataFim":"2026-08-12","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Altamira do Paraná","dataInicio":"2026-08-13","dataFim":"2026-08-14","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Farol","dataInicio":"2026-08-18","dataFim":"2026-08-19","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Boa Esperança","dataInicio":"2026-08-20","dataFim":"2026-08-21","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Mamborê","dataInicio":"2026-08-25","dataFim":"2026-08-26","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Quarto Centenário","dataInicio":"2026-08-27","dataFim":"2026-08-28","caminhao":3,"tipo":"Atendimento Pedagógico"},{"cidade":"Nova Tebas","dataInicio":"2026-03-03","dataFim":"2026-03-05","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Francisco Beltrão","dataInicio":"2026-03-07","dataFim":"2026-03-15","caminhao":4,"tipo":"Evento"},{"cidade":"Cândido de Abreu","dataInicio":"2026-03-17","dataFim":"2026-03-19","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Toledo","dataInicio":"2026-03-20","dataFim":"2026-03-21","caminhao":4,"tipo":"Evento"},{"cidade":"Miraselva","dataInicio":"2026-03-24","dataFim":"2026-03-26","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Santa Fé","dataInicio":"2026-03-31","dataFim":"2026-04-02","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Sertanópolis","dataInicio":"2026-04-07","dataFim":"2026-04-09","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Lidianópolis","dataInicio":"2026-04-14","dataFim":"2026-04-16","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Manoel Ribas","dataInicio":"2026-04-22","dataFim":"2026-04-24","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"São Pedro do Ivaí","dataInicio":"2026-04-28","dataFim":"2026-04-30","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Bom Sucesso","dataInicio":"2026-05-05","dataFim":"2026-05-07","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Jardim Alegre","dataInicio":"2026-05-12","dataFim":"2026-05-15","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Doutor Camargo","dataInicio":"2026-05-19","dataFim":"2026-05-21","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Kaloré","dataInicio":"2026-06-09","dataFim":"2026-06-11","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Borrazópolis","dataInicio":"2026-06-16","dataFim":"2026-06-18","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Faxinal","dataInicio":"2026-06-30","dataFim":"2026-07-02","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Tamarana","dataInicio":"2026-07-07","dataFim":"2026-07-09","caminhao":4,"tipo":"Atendimento Pedagógico"},{"cidade":"Ibiporã","dataInicio":"2026-07-21","dataFim":"2026-07-23","caminhao":4,"tipo":"Atendimento Pedagógico"}],"emContato":[{"cidade":"Santa Cecília do Pavão","tipo":"Atendimento Pedagógico"},{"cidade":"Fazenda Rio Grande**","tipo":"Atendimento Pedagógico"},{"cidade":"Guaraqueçaba","tipo":"Atendimento Pedagógico"},{"cidade":"Campina Grande do Sul*","tipo":"Atendimento Pedagógico"},{"cidade":"Tibagi","tipo":"Atendimento Pedagógico"},{"cidade":"Quatiguá","tipo":"Atendimento Pedagógico"},{"cidade":"Joaquim Távora","tipo":"Atendimento Pedagógico"},{"cidade":"Jacarezinho","tipo":"Atendimento Pedagógico"},{"cidade":"Santa Mariana","tipo":"Atendimento Pedagógico"},{"cidade":"Reserva","tipo":"Atendimento Pedagógico"},{"cidade":"Ortigueira","tipo":"Atendimento Pedagógico"},{"cidade":"Lapa*","tipo":"Atendimento Pedagógico"},{"cidade":"Mandirituba","tipo":"Atendimento Pedagógico"},{"cidade":"Morretes","tipo":"Atendimento Pedagógico"},{"cidade":"Quatro Barras","tipo":"Atendimento Pedagógico"},{"cidade":"Adrianópolis","tipo":"Atendimento Pedagógico"},{"cidade":"Fernandes Pinheiro","tipo":"Atendimento Pedagógico"},{"cidade":"Marquinho","tipo":"Atendimento Pedagógico"},{"cidade":"Cruz Machado","tipo":"Atendimento Pedagógico"},{"cidade":"União da Vitória**","tipo":"Atendimento Pedagógico"},{"cidade":"Pinhal do São Bento","tipo":"Atendimento Pedagógico"},{"cidade":"Bituruna","tipo":"Atendimento Pedagógico"},{"cidade":"Vitorino","tipo":"Atendimento Pedagógico"},{"cidade":"Dois Vizinhos","tipo":"Atendimento Pedagógico"},{"cidade":"Ipiranga","tipo":"Atendimento Pedagógico"},{"cidade":"Nova Laranjeiras","tipo":"Atendimento Pedagógico"},{"cidade":"Mallet","tipo":"Atendimento Pedagógico"},{"cidade":"Porto Vitória","tipo":"Atendimento Pedagógico"},{"cidade":"Prudentópolis**","tipo":"Atendimento Pedagógico"},{"cidade":"Amaporã","tipo":"Atendimento Pedagógico"},{"cidade":"Araruna","tipo":"Atendimento Pedagógico"},{"cidade":"Iporã","tipo":"Atendimento Pedagógico"},{"cidade":"Cascavel - Feira de Technovação","tipo":"Evento"},{"cidade":"Guairaçá","tipo":"Atendimento Pedagógico"},{"cidade":"Loanda","tipo":"Atendimento Pedagógico"},{"cidade":"Porto Rico","tipo":"Atendimento Pedagógico"},{"cidade":"Diamante do Norte","tipo":"Atendimento Pedagógico"},{"cidade":"São João do Caiuá","tipo":"Atendimento Pedagógico"},{"cidade":"Alto Piquiri","tipo":"Atendimento Pedagógico"},{"cidade":"Tuneiras do Oeste","tipo":"Atendimento Pedagógico"},{"cidade":"Juranda","tipo":"Atendimento Pedagógico"},{"cidade":"Luiziana","tipo":"Atendimento Pedagógico"},{"cidade":"Corumbataí do Sul","tipo":"Atendimento Pedagógico"},{"cidade":"Fênix","tipo":"Atendimento Pedagógico"},{"cidade":"Barbosa Ferraz","tipo":"Atendimento Pedagógico"},{"cidade":"Roncador","tipo":"Atendimento Pedagógico"},{"cidade":"Nova Cantu","tipo":"Atendimento Pedagógico"},{"cidade":"Campina da Lagoa","tipo":"Atendimento Pedagógico"},{"cidade":"Goioerê","tipo":"Atendimento Pedagógico"},{"cidade":"Moreira Sales","tipo":"Atendimento Pedagógico"},{"cidade":"Querência do Norte","tipo":"Atendimento Pedagógico"},{"cidade":"Mirador","tipo":"Atendimento Pedagógico"},{"cidade":"São Manoel do Paraná","tipo":"Atendimento Pedagógico"},{"cidade":"Peabiru","tipo":"Atendimento Pedagógico"},{"cidade":"Maria Helena","tipo":"Atendimento Pedagógico"},{"cidade":"Marumbi","tipo":"Atendimento Pedagógico"},{"cidade":"Novo Itacolomi","tipo":"Atendimento Pedagógico"},{"cidade":"Grandes Rios","tipo":"Atendimento Pedagógico"},{"cidade":"Prado Ferreira","tipo":"Atendimento Pedagógico"},{"cidade":"Lunardelli","tipo":"Atendimento Pedagógico"},{"cidade":"Cafeara","tipo":"Atendimento Pedagógico"},{"cidade":"Arapongas","tipo":"Atendimento Pedagógico"},{"cidade":"Sabáudia","tipo":"Atendimento Pedagógico"},{"cidade":"Astorga","tipo":"Atendimento Pedagógico"},{"cidade":"Pitangueiras","tipo":"Atendimento Pedagógico"},{"cidade":"Jaguapitã","tipo":"Atendimento Pedagógico"},{"cidade":"Florestópolis","tipo":"Atendimento Pedagógico"},{"cidade":"Alvorada do Sul","tipo":"Atendimento Pedagógico"},{"cidade":"Porecatu","tipo":"Atendimento Pedagógico"},{"cidade":"Centenário do Sul","tipo":"Atendimento Pedagógico"},{"cidade":"Lupionópolis","tipo":"Atendimento Pedagógico"},{"cidade":"Guaraci","tipo":"Atendimento Pedagógico"},{"cidade":"Flórida","tipo":"Atendimento Pedagógico"},{"cidade":"Ângulo","tipo":"Atendimento Pedagógico"},{"cidade":"Sarandi","tipo":"Atendimento Pedagógico"},{"cidade":"Paiçandu","tipo":"Atendimento Pedagógico"},{"cidade":"São Jorge do Ivaí","tipo":"Atendimento Pedagógico"},{"cidade":"Lunardelli","tipo":"Atendimento Pedagógico"},{"cidade":"Ivaiporã","tipo":"Atendimento Pedagógico"},{"cidade":"Ariranha do Ivaí","tipo":"Atendimento Pedagógico"},{"cidade":"Jandaia do Sul","tipo":"Atendimento Pedagógico"},{"cidade":"Primeiro de Maio","tipo":"Atendimento Pedagógico"},{"cidade":"Bela Vista do Paraíso","tipo":"Atendimento Pedagógico"}]};
+
+let calendar;
+let filtroAtual = null;
+let somenteEventos = false;
+
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.body.classList.add("dark-mode");
+}
+
+function montarEventos() {
+    return DATA.calendario
+        .filter(e => {
+            if (filtroAtual && e.caminhao != filtroAtual) return false;
+            if (somenteEventos && e.tipo !== "Evento") return false;
+            return true;
+        })
+        .map(e => {
+
+            let cor = "#1abc9c";
+            if (e.caminhao == 2) cor = "#3498db";
+            if (e.caminhao == 3) cor = "#9b59b6";
+            if (e.caminhao == 4) cor = "#f39c12";
+
+            let titulo = e.cidade;
+            if (e.tipo === "Evento") titulo += " *";
+
+            let dataFinal = new Date(e.dataFim);
+            dataFinal.setDate(dataFinal.getDate() + 1);
+
+            return {
+                title: titulo,
+                start: e.dataInicio,
+                end: dataFinal.toISOString().split("T")[0],
+                backgroundColor: cor,
+                borderColor: cor,
+                extendedProps: e
+            };
+        });
+}
+
+function renderizar() {
+    document.getElementById("calendar").style.opacity = 0.3;
+
+    setTimeout(() => {
+        calendar.removeAllEvents();
+        calendar.addEventSource(montarEventos());
+        atualizarListaMes();
+        document.getElementById("calendar").style.opacity = 1;
+    }, 200);
+}
+
+function filtrarRota(r) {
+    filtroAtual = r;
+    somenteEventos = false;
+    renderizar();
+}
+
+function verEventos() {
+    filtroAtual = null;
+    somenteEventos = true;
+    renderizar();
+}
+
+function limparFiltros() {
+    filtroAtual = null;
+    somenteEventos = false;
+    renderizar();
+}
+
+function atualizarListaMes() {
+
+    const view = calendar.view;
+    const inicioMes = view.currentStart;
+    const fimMes = view.currentEnd;
+
+    const lista = document.getElementById("listaMunicipios");
+    lista.innerHTML = "";
+
+    const municipios = DATA.calendario
+        .filter(e => {
+            const dataInicio = new Date(e.dataInicio);
+            return dataInicio >= inicioMes && dataInicio < fimMes;
+        });
+
+    const unicos = [...new Map(municipios.map(e => [e.cidade, e])).values()];
+
+    unicos.forEach(e => {
+
+        const li = document.createElement("li");
+        li.textContent = e.cidade;
+        li.style.cursor = "pointer";
+        li.style.marginBottom = "6px";
+
+        li.onclick = function() {
+            destacarEvento(e.cidade);
+        };
+
+        lista.appendChild(li);
+    });
+}
+
+function destacarEvento(nomeCidade) {
+
+    const eventos = calendar.getEvents();
+
+    const evento = eventos.find(ev =>
+        ev.title.startsWith(nomeCidade)
+    );
+
+    if (!evento) return;
+
+    calendar.gotoDate(evento.start);
+
+    setTimeout(() => {
+
+        const elementos = document.querySelectorAll(".fc-event");
+
+        elementos.forEach(el => {
+            if (el.innerText.startsWith(nomeCidade)) {
+                el.classList.add("highlight-event");
+
+                setTimeout(() => {
+                    el.classList.remove("highlight-event");
+                }, 3000);
+            }
+        });
+
+    }, 300);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    calendar = new FullCalendar.Calendar(
+        document.getElementById("calendar"),
+        {
+            initialView: "dayGridMonth",
+            locale: "pt-br",
+            height: "auto",
+            events: montarEventos(),
+
+            datesSet: function() {
+                atualizarListaMes();
+            },
+
+            eventClick: function(info) {
+
+                const e = info.event.extendedProps;
+
+                const tooltip = document.createElement("div");
+                tooltip.className = "tooltip-box";
+                tooltip.innerHTML = `
+                    <strong>${info.event.title}</strong><br>
+                    Rota: ${e.caminhao}<br>
+                    Tipo: ${e.tipo}<br>
+                    Início: ${e.dataInicio}<br>
+                    Fim: ${e.dataFim}
+                `;
+
+                document.body.appendChild(tooltip);
+
+                tooltip.style.left = info.jsEvent.pageX + "px";
+                tooltip.style.top = info.jsEvent.pageY + "px";
+
+                setTimeout(() => tooltip.remove(), 4000);
+            }
+        }
+    );
+
+    calendar.render();
+    atualizarListaMes();
+});
+
+</script>
+
+</body>
+</html>
