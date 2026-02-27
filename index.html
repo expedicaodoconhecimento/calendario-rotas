@@ -178,34 +178,35 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 }
 
 function montarEventos() {
-    return DATA.calendario
-        .filter(e => {
-            if (filtroAtual && e.caminhao != filtroAtual) return false;
-            if (somenteEventos && e.tipo !== "Evento") return false;
-            return true;
-        })
-        .map(e => {
 
-            let cor = "#1abc9c";
-            if (e.caminhao == 2) cor = "#3498db";
-            if (e.caminhao == 3) cor = "#9b59b6";
-            if (e.caminhao == 4) cor = "#f39c12";
+  return DATA.calendario
+    .filter(e => e.dataInicio && e.dataFim)
+    .map(e => {
 
-            let titulo = e.cidade;
-            if (e.tipo === "Evento") titulo += " *";
+      let cor = "#1abc9c";
+      if (e.caminhao == 2) cor = "#3498db";
+      if (e.caminhao == 3) cor = "#9b59b6";
+      if (e.caminhao == 4) cor = "#f39c12";
 
-            let dataFinal = new Date(e.dataFim);
-            dataFinal.setDate(dataFinal.getDate() + 1);
+      let titulo = e.cidade;
+      if (e.tipo === "Evento") {
+        titulo = e.cidade + " *";
+      }
 
-            return {
-                title: titulo,
-                start: e.dataInicio,
-                end: dataFinal.toISOString().split("T")[0],
-                backgroundColor: cor,
-                borderColor: cor,
-                extendedProps: e
-            };
-        });
+      let dataFinal = new Date(e.dataFim);
+      if (isNaN(dataFinal)) return null;
+
+      dataFinal.setDate(dataFinal.getDate() + 1);
+
+      return {
+        title: titulo,
+        start: e.dataInicio,
+        end: dataFinal.toISOString().split("T")[0],
+        backgroundColor: cor,
+        borderColor: cor
+      };
+    })
+    .filter(e => e !== null);
 }
 
 function renderizar() {
